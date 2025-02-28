@@ -1,6 +1,6 @@
 from datetime import datetime, UTC
 
-from sqlalchemy import ForeignKey, String, ARRAY, JSON
+from sqlalchemy import ForeignKey, JSON
 from sqlalchemy.orm import Mapped, relationship
 from sqlalchemy.testing.schema import mapped_column
 
@@ -9,7 +9,7 @@ from database import Base
 
 class User(Base):
     __tablename__ = "user_table"
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     email: Mapped[str] = mapped_column(unique=True)
     password: Mapped[str] = mapped_column()
     telegram_bots: Mapped[list["TelegramBot"]] = relationship(back_populates="user")
@@ -17,7 +17,7 @@ class User(Base):
 
 class TelegramUser(Base):
     __tablename__ = "telegram_user_table"
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     telegram_user_id: Mapped[int] = mapped_column(unique=True)
     first_name: Mapped[str | None]
     last_name: Mapped[str | None]
@@ -33,10 +33,10 @@ class TelegramUser(Base):
 
 class TelegramBot(Base):
     __tablename__ = "telegram_bot_table"
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str | None] = mapped_column(unique=True)
     created_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
-    latest_activity: Mapped[datetime] = mapped_column(default=None)
+    latest_activity: Mapped[datetime | None]
     active: Mapped[bool] = mapped_column(default=False)
     telegram_token: Mapped[str] = mapped_column(unique=True)
     internal_token: Mapped[str] = mapped_column(unique=True)
@@ -49,6 +49,10 @@ class TelegramBot(Base):
         back_populates="telegram_bots",
         single_parent=True,
     )
+    greeting_message: Mapped[str]
+    edited_message_response: Mapped[str]
+    confirmed_input_message: Mapped[str]
+    unconfirmed_input_message: Mapped[str]
 
     def __repr__(self):
         return f"TelegramBot(id={self.id}, name={self.name}, active={self.active}"
@@ -56,10 +60,8 @@ class TelegramBot(Base):
 
 class Survey(Base):
     __tablename__ = "survey_table"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    questions: Mapped[list[str]] = mapped_column(ARRAY(String))
-    greeting: Mapped[str | None]
-    conclusion: Mapped[str | None]
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    questions: Mapped[list[str]] = mapped_column(JSON)
     telegram_bot_id: Mapped[int | None] = mapped_column(
         ForeignKey("telegram_bot_table.id"),
         unique=True,
@@ -75,7 +77,7 @@ class Survey(Base):
 
 class SurveyResults(Base):
     __tablename__ = "survey_results_table"
-    id: Mapped[int] = mapped_column(primary_key=True)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     answers: Mapped[dict[str, str]] = mapped_column(JSON)
     created_at: Mapped[datetime] = mapped_column(default=datetime.now(UTC))
     survey_id: Mapped[int] = mapped_column(ForeignKey("survey_table.id"))
